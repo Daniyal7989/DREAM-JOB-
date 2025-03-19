@@ -572,6 +572,9 @@ def get_chrome_binary():
         "/opt/google/chrome/chrome",
         "/usr/bin/chromium",
         "/usr/bin/chromium-browser"
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser",
+        
     ]
     for path in possible_paths:
         if os.path.exists(path):
@@ -593,7 +596,7 @@ def init_chrome_driver():
         raise Exception("No Chrome or Chromium binary found!")
     options.binary_location = chrome_binary
     if "google/chrome" in chrome_binary:
-        driver_version = "133.0.6943.126"
+        driver_version = "133.0.6943.126","134.0.6998.88"
     else:
         driver_version = "120.0.6099.224"
     driver_path = ChromeDriverManager(driver_version=driver_version).install()
@@ -609,6 +612,20 @@ def init_firefox_driver():
     service = FirefoxService(driver_path)
     driver = webdriver.Firefox(service=service, options=options)
     return driver
+
+def get_chrome_version():
+    """Get the installed Chrome/Chromium version dynamically."""
+    chrome_binary = get_chrome_binary()
+    if not chrome_binary:
+        raise Exception("No Chrome/Chromium binary found!")
+
+    try:
+        version_output = os.popen(f'"{chrome_binary}" --version').read()
+        version = version_output.split(" ")[-1].strip()
+        return version
+    except Exception as e:
+        print(f"Failed to get Chrome version: {e}")
+        return None
 
 def init_driver():
     try:
