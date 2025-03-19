@@ -28,6 +28,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, StaleElementReferenceException
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
 import time
 import json
 import random
@@ -559,6 +566,60 @@ def init_driver():
     options.add_argument("--no-sandbox")  # Bypass OS security model
     service = Service(ChromeDriverManager().install())
     return webdriver.Chrome(service=service, options=options)
+
+def get_chrome_binary():
+    possible_paths = [
+        "/opt/google/chrome/chrome",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser"
+    ]
+    for path in possible_paths:
+        if os.path.exists(path):
+            return path
+    return None
+
+def init_chrome_driver():
+    options = ChromeOptions()
+    options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--remote-debugging-port=9222")
+    options.add_argument("--start-maximized")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+    chrome_binary = get_chrome_binary()
+    if not chrome_binary:
+        raise Exception("No Chrome or Chromium binary found!")
+    options.binary_location = chrome_binary
+    if "google/chrome" in chrome_binary:
+        driver_version = "133.0.6943.126"
+    else:
+        driver_version = "120.0.6099.224"
+    driver_path = ChromeDriverManager(driver_version=driver_version).install()
+    os.chmod(driver_path, 0o755)
+    service = ChromeService(driver_path)
+    driver = webdriver.Chrome(service=service, options=options)
+    return driver
+
+def init_firefox_driver():
+    options = FirefoxOptions()
+    options.add_argument("--headless")
+    driver_path = GeckoDriverManager().install()
+    service = FirefoxService(driver_path)
+    driver = webdriver.Firefox(service=service, options=options)
+    return driver
+
+def init_driver():
+    try:
+        driver = init_chrome_driver()
+        print("Initialized Chrome/Chromium driver.")
+        return driver
+    except Exception as e:
+        print("Chrome driver initialization failed, trying Firefox. Error:", e)
+        driver = init_firefox_driver()
+        print("Initialized Firefox driver.")
+        return driver
 
 # Function to find element with retry for stale element issues
 def find_element_safely(driver, by, value, max_attempts=3, wait_time=10):
