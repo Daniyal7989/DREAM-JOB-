@@ -1,0 +1,11 @@
+streamlit
+openai
+pandas
+python-docx
+pdfplumber
+plotly
+matplotlib
+selenium
+webdriver-manager
+PyMuPDF
+tqdm
